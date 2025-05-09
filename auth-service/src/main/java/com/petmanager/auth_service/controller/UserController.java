@@ -16,7 +16,7 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private UserService userService; // ✅ Aquí faltaba la inyección del servicio
+    private UserService userService;
     // Buscar un usuario por email (ejemplo: /api/users/email?email=test@email.com)
     @GetMapping("/email")
     public ResponseEntity<User> getUserByEmail(@RequestParam String email) {

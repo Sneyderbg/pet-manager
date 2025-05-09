@@ -1,7 +1,8 @@
 package com.petmanager.auth_service.graphql;
 
 import com.petmanager.auth_service.model.User;
-import com.petmanager.auth_service.service.UserService;
+import com.petmanager.auth_service.repository.UserRepository;
+import com.petmanager.auth_service.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -12,18 +13,21 @@ import org.springframework.stereotype.Controller;
 public class UserResolver {
 
     @Autowired
-    private UserService userService;
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtService jwtService;
 
     @QueryMapping
     public User getUserByEmail(@Argument String email) {
-        return userService.findByEmail(email)
-                .orElse(null); // podrías lanzar excepción si prefieres
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     @MutationMapping
-    public User registerUser(@Argument String nombre,
-                             @Argument String email,
-                             @Argument String password) {
-        return userService.registerUser(nombre, email, password);
+    public String login(@Argument String email, @Argument String password) {
+        return userRepository.findByEmail(email)
+                .filter(user -> user.getPassword().equals(password))
+                .map(user -> jwtService.generateToken(user.getEmail()))
+                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
     }
 }
