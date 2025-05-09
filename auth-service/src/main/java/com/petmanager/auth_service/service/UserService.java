@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -14,8 +15,8 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    // Método original
     public User registerUser(UserRequest userRequest) {
-        // Crear nuevo usuario a partir del DTO
         User user = new User();
         user.setNombre(userRequest.getNombre());
         user.setEmail(userRequest.getEmail());
@@ -25,4 +26,22 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+    // ✅ Método adicional para GraphQL: registrar sin DTO
+    public User registerUser(String nombre, String email, String password) {
+        User user = new User();
+        user.setNombre(nombre);
+        user.setEmail(email);
+        user.setPassword(password); // ⚠️ En el futuro cifrar con BCrypt
+        user.setFechaCreacion(LocalDateTime.now());
+        user.setActivo(true);
+
+        return userRepository.save(user);
+    }
+
+    // ✅ Método adicional para GraphQL: buscar por email
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 }
+
