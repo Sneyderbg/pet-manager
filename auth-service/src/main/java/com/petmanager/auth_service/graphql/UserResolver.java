@@ -26,8 +26,12 @@ public class UserResolver {
     @MutationMapping
     public String login(@Argument String email, @Argument String password) {
         return userRepository.findByEmail(email)
-                .filter(user -> user.getPassword().equals(password))
-                .map(user -> jwtService.generateToken(user.getEmail()))
-                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
+                .map(user -> {
+                    if (!user.getPassword().equals(password)) {
+                        return "Error: Credenciales inválidas";
+                    }
+                    return jwtService.generateToken(user.getEmail());
+                })
+                .orElse("Error: Usuario no encontrado");
     }
 }
