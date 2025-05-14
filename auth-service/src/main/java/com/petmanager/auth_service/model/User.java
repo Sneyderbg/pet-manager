@@ -32,5 +32,10 @@ public class User {
 
     @Column(name = "activo")
     private Boolean activo;
+
+    // ✅ Método explícito que soluciona el error de compilación
+    public Boolean isActivo() {
+        return this.activo;
+    }
 }
 
