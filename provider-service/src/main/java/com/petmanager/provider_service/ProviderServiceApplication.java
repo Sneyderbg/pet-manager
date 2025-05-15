@@ -1,4 +1,4 @@
-package com.petmanager;
+package com.petmanager.provider_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

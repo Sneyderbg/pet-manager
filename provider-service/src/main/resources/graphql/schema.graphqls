@@ -1,0 +1,104 @@
+type Proveedor {
+    id: ID!
+    nombre: String!
+    nit: String!
+    direccion: String!
+    telefono: String!
+    email: String!
+    fechaRegistro: String
+    fechaRegistroString: String
+    activo: Boolean!
+    idUsuarioCreador: ID!
+    productos: [Producto]
+    condicionesPago: [CondicionPago]
+}
+
+type Producto {
+    idProducto: ID!
+    codigo: String!
+    nombre: String!
+    descripcion: String!
+    precio: Float!
+}
+
+type CondicionPago {
+    id: ID!
+    diasCredito: Int!
+    fechaInicio: String!
+    fechaFin: String!
+    nota: String
+}
+
+input ProductoInput {
+    codigo: String!
+    nombre: String!
+    descripcion: String!
+    precio: Float!
+}
+
+input CondicionPagoInput {
+    diasCredito: Int!
+    fechaInicio: String!
+    fechaFin: String!
+    nota: String
+}
+
+input ProveedorInput {
+    nombre: String!
+    nit: String!
+    direccion: String!
+    telefono: String!
+    email: String!
+    idUsuarioCreador: ID!
+    productos: [ProductoInput!]
+    condicionesPago: [CondicionPagoInput!]
+}
+
+type Query {
+    getProveedores: [Proveedor]
+    getProveedorById(id: ID!): Proveedor
+    listarProductosPorProveedor(idProveedor: ID!): [Producto]
+}
+
+type Mutation {
+    createProveedor(input: ProveedorInput!): Proveedor
+
+    updateProveedor(
+        id: ID!
+        nombre: String
+        nit: String
+        direccion: String
+        telefono: String
+        email: String
+        activo: Boolean
+    ): Proveedor
+
+    deleteProveedor(id: ID!): Boolean
+
+    agregarProducto(
+        idProveedor: ID!
+        codigo: String!
+        nombre: String!
+        descripcion: String
+        precio: Float!
+    ): Producto
+
+    actualizarProducto(
+        idProducto: ID!
+        codigo: String
+        nombre: String
+        descripcion: String
+        precio: Float
+    ): Producto
+
+    actualizarCondicionPago(
+        idCondicionPago: ID!,
+        diasCredito: Int,
+        fechaInicio: String,
+        fechaFin: String,
+        nota: String
+    ): CondicionPago
+
+    eliminarCondicionPago(idCondicionPago: ID!): Boolean
+
+}
