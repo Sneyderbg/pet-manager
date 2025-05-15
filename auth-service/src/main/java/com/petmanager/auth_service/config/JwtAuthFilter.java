@@ -1,29 +1,36 @@
 package com.petmanager.auth_service.config;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petmanager.auth_service.model.User;
+import com.petmanager.auth_service.repository.UserRepository;
 import com.petmanager.auth_service.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
+
     private final List<String> allowedOperations = Arrays.asList("login", "registerUser");
 
     @Autowired
-    public JwtAuthFilter(JwtService jwtService) {
+    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -32,51 +39,39 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Permitir siempre el acceso al endpoint GraphQL
-        if ("POST".equalsIgnoreCase(request.getMethod()) && request.getRequestURI().equals("/graphql")) {
-            // Si la petición tiene un token JWT, validarlo
-            String authHeader = request.getHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                try {
-                    String token = authHeader.substring(7);
-                    String username = jwtService.extractUsername(token);
-                    if (!jwtService.validateToken(token, username)) {
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.getWriter().write("{\"error\": \"Token inválido\"}");
-                        return;
-                    }
-                } catch (Exception e) {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"error\": \"Token inválido: " + e.getMessage() + "\"}");
-                    return;
-                }
-            }
-
-            // Importante: No intentar leer el cuerpo de la petición aquí
-            // Simplemente pasa la petición al siguiente filtro
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // Para otras rutas, aplica la validación JWT normal
         String authHeader = request.getHeader("Authorization");
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
                 String token = authHeader.substring(7);
                 String username = jwtService.extractUsername(token);
-                if (jwtService.validateToken(token, username)) {
-                    filterChain.doFilter(request, response);
-                } else {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"error\": \"Token inválido\"}");
+
+                if (username != null && jwtService.validateToken(token, username)) {
+                    User user = userRepository.findByEmail(username).orElse(null);
+
+                    if (user != null) {
+                        List<GrantedAuthority> authorities = user.getRoles().stream()
+                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getNombre()))
+                                .collect(Collectors.toList());
+
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        user.getEmail(),
+                                        null,
+                                        authorities
+                                );
+
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 }
             } catch (Exception e) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("{\"error\": \"Error al procesar token: " + e.getMessage() + "\"}");
+                response.getWriter().write("{\"error\": \"Token inválido: " + e.getMessage() + "\"}");
+                return;
             }
-        } else {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("{\"error\": \"Falta token JWT\"}");
         }
+
+        // Permitir pasar la petición al siguiente filtro (ya sea autenticado o no)
+        filterChain.doFilter(request, response);
     }
 }

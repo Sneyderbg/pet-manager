@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "usuario")
@@ -33,9 +34,15 @@ public class User {
     @Column(name = "activo")
     private Boolean activo;
 
-    // ✅ Método explícito que soluciona el error de compilación
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "rolxusuario",
+            joinColumns = @JoinColumn(name = "id_usuario"),
+            inverseJoinColumns = @JoinColumn(name = "id_rol")
+    )
+    private Set<Rol> roles;
+
     public Boolean isActivo() {
         return this.activo;
     }
 }
-
