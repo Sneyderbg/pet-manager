@@ -1,0 +1,16 @@
+type User {
+  id: ID
+  nombre: String
+  email: String
+  activo: Boolean
+  fechaCreacion: String
+}
+
+type Query {
+  getUserByEmail(email: String!): User
+}
+
+type Mutation {
+  registerUser(nombre: String!, email: String!, password: String!): User
+  login(email: String!, password: String!): String
+}
