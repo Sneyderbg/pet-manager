@@ -7,6 +7,7 @@
         <option value="$USER_HOME$/Downloads/Microservicios/auth-service/pom.xml" />
         <option value="$PROJECT_DIR$/auth-service/pom.xml" />
         <option value="$PROJECT_DIR$/provider-service/pom.xml" />
+        <option value="$PROJECT_DIR$/supplier-service/pom.xml" />
       </list>
     </option>
   </component>
