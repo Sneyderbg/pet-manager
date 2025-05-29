@@ -10,4 +10,5 @@ public class CondicionPagoInput {
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
     private String nota;
+    private Long idUsuario;  // ← Campo necesario
 }

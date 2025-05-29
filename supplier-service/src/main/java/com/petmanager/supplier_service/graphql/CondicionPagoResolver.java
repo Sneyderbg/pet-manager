@@ -1,5 +1,6 @@
 package com.petmanager.supplier_service.graphql;
 
+import com.petmanager.supplier_service.dto.CondicionPagoInput;
 import com.petmanager.supplier_service.model.CondicionPago;
 import com.petmanager.supplier_service.service.CondicionPagoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,17 +24,36 @@ public class CondicionPagoResolver {
             @Argument String fechaFin,
             @Argument String nota
     ) {
-        CondicionPago nueva = new CondicionPago();
-        nueva.setDiasCredito(diasCredito);
-        nueva.setFechaInicio(LocalDate.parse(fechaInicio));
-        nueva.setFechaFin(LocalDate.parse(fechaFin));
-        nueva.setNota(nota);
+        // Crear objeto con los datos a actualizar
+        CondicionPago datosActualizacion = new CondicionPago();
 
-        return condicionPagoService.actualizarCondicionPago(idCondicionPago, nueva);
+        if (diasCredito != null) {
+            datosActualizacion.setDiasCredito(diasCredito);
+        }
+
+        if (fechaInicio != null) {
+            datosActualizacion.setFechaInicio(LocalDate.parse(fechaInicio));
+        }
+
+        if (fechaFin != null) {
+            datosActualizacion.setFechaFin(LocalDate.parse(fechaFin));
+        }
+
+        if (nota != null) {
+            datosActualizacion.setNota(nota);
+        }
+
+        // Usar nuestro servicio actualizado con excepciones
+        return condicionPagoService.actualizarCondicionPago(idCondicionPago, datosActualizacion);
     }
 
     @MutationMapping
     public Boolean eliminarCondicionPago(@Argument Long idCondicionPago) {
         return condicionPagoService.eliminarCondicionPago(idCondicionPago);
+    }
+
+    @MutationMapping
+    public CondicionPago crearCondicionPago(@Argument CondicionPagoInput input) {
+        return condicionPagoService.crearCondicionPago(input);
     }
 }

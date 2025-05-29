@@ -20,10 +20,14 @@
         <module name="supplier-service" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="exception" target="21" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="auth-service" options="-parameters" />
+      <module name="exception" options="-parameters" />
       <module name="supplier-service" options="-parameters" />
     </option>
   </component>

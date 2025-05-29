@@ -6,8 +6,8 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "condicion_pago")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -16,7 +16,11 @@ public class CondicionPago {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_condicion_pago")
-    private Long id;
+    private Long idCondicionPago;
+
+    @ManyToOne
+    @JoinColumn(name = "id_proveedor")
+    private Proveedor proveedor;
 
     @Column(name = "dias_credito")
     private Integer diasCredito;
@@ -27,11 +31,8 @@ public class CondicionPago {
     @Column(name = "fecha_fin")
     private LocalDate fechaFin;
 
-    @Column(name = "nota", columnDefinition = "text")
     private String nota;
 
-    @ManyToOne
-    @JoinColumn(name = "id_proveedor")
-    private Proveedor proveedor;
+    @Column(name = "id_usuario")
+    private Long idUsuario;
 }
-

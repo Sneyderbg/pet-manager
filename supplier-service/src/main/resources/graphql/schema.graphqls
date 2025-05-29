@@ -1,18 +1,16 @@
 type Proveedor {
-    id: ID!
-    nombre: String!
-    nit: String!
-    direccion: String!
-    telefono: String!
-    email: String!
+    idProveedor: ID!         # <-- este campo estaba faltando
+    nombre: String
+    nit: String
+    direccion: String
+    telefono: String
+    email: String
     fechaRegistro: String
-    fechaRegistroString: String
-    activo: Boolean!
-    idUsuarioCreador: ID!
+    activo: Boolean
+    idUsuarioCreador: ID
     productos: [Producto]
     condicionesPago: [CondicionPago]
 }
-
 type Producto {
     idProducto: ID!
     codigo: String!
@@ -22,11 +20,12 @@ type Producto {
 }
 
 type CondicionPago {
-    id: ID!
-    diasCredito: Int!
-    fechaInicio: String!
-    fechaFin: String!
+    idCondicionPago: ID!     # <-- este campo estaba faltando
+    diasCredito: Int
+    fechaInicio: String
+    fechaFin: String
     nota: String
+    idUsuario: ID
 }
 
 input ProductoInput {
@@ -41,7 +40,9 @@ input CondicionPagoInput {
     fechaInicio: String!
     fechaFin: String!
     nota: String
+    idUsuario: ID!
 }
+
 
 input ProveedorInput {
     nombre: String!
@@ -101,4 +102,5 @@ type Mutation {
 
     eliminarCondicionPago(idCondicionPago: ID!): Boolean
 
+    crearCondicionPago(input: CondicionPagoInput!): CondicionPago
 }

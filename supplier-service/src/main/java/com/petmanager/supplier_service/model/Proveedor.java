@@ -18,7 +18,7 @@ public class Proveedor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_proveedor")
-    private Long id;
+    private Long idProveedor; // ← Cambiado de "id" a "idProveedor"
 
     @Column(name = "nombre", length = 100)
     private String nombre;
