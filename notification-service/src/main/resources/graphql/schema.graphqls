@@ -1,0 +1,65 @@
+
+# Tipo principal: NotificacionPago
+type NotificacionPago {
+    idNotificacionPago: ID!
+    idProveedor: Int!
+    idCondicionPago: Int!
+    fechaVencimiento: String!
+    fechaNotificacion: String!
+    notificado: Boolean!
+    estado: String!
+
+    # Campos enriquecidos (@Transient)
+    nombreProveedor: String
+    emailProveedor: String
+    diasCredito: Int
+    diasRestantes: Int
+    tipoNotificacion: String
+    nota: String
+}
+
+# Resultado de procesamiento
+type ResultadoProcesamiento {
+    exitoso: Boolean!
+    mensaje: String!
+    notificacionesCreadas: Int
+    notificacionesEnviadas: Int
+    tiempoEjecucion: String
+}
+
+# ================================================
+# QUERIES - Consultas esenciales
+# ================================================
+type Query {
+    # Obtener todas las notificaciones
+    getNotificaciones: [NotificacionPago!]!
+
+    # Obtener notificación por ID
+    getNotificacionById(id: ID!): NotificacionPago
+
+    # Obtener notificaciones por proveedor
+    getNotificacionesByProveedor(idProveedor: Int!): [NotificacionPago!]!
+
+    # Obtener notificaciones pendientes de envío
+    getNotificacionesPendientes: [NotificacionPago!]!
+
+    # Health check del notification-service
+    healthCheck: String!
+}
+
+# ================================================
+# MUTATIONS - Operaciones esenciales
+# ================================================
+type Mutation {
+    # Ejecutar procesamiento manual de notificaciones
+    ejecutarProcesamientoManual: ResultadoProcesamiento!
+
+    # Enviar notificaciones pendientes manualmente
+    enviarNotificacionesPendientes: ResultadoProcesamiento!
+
+    # Marcar notificación como enviada
+    marcarNotificacionComoEnviada(id: ID!): NotificacionPago
+
+    # Verificar y sincronizar con supplier-service
+    sincronizarConSupplierService: ResultadoProcesamiento!
+}
