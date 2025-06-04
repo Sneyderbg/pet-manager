@@ -62,4 +62,7 @@ type Mutation {
 
     # Verificar y sincronizar con supplier-service
     sincronizarConSupplierService: ResultadoProcesamiento!
+
+    # Enviar email de prueba para verificar configuración
+    enviarEmailPrueba(email: String!): ResultadoProcesamiento!
 }

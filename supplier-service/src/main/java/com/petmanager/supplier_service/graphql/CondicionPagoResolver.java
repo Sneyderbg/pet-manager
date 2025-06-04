@@ -56,4 +56,16 @@ public class CondicionPagoResolver {
     public CondicionPago crearCondicionPago(@Argument CondicionPagoInput input) {
         return condicionPagoService.crearCondicionPago(input);
     }
+
+    // ================================================
+    // NUEVA MUTATION: Crear condición asociada a proveedor
+    // ================================================
+
+    @MutationMapping
+    public CondicionPago crearCondicionPagoParaProveedor(
+            @Argument Long idProveedor,
+            @Argument CondicionPagoInput input
+    ) {
+        return condicionPagoService.crearCondicionPagoParaProveedor(idProveedor, input);
+    }
 }

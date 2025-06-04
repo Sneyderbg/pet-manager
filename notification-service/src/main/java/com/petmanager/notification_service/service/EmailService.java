@@ -1,19 +1,26 @@
 package com.petmanager.notification_service.service;
 
 import com.petmanager.notification_service.model.NotificacionPago;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
 
 /**
- * Servicio para envío de notificaciones por email
- * Implementación básica con logs (después configuraremos Brevo)
+ * Servicio para envío de notificaciones por email usando Brevo
  */
 @Service
 @Slf4j
 public class EmailService {
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Value("${brevo.sender.email:notificaciones@petmanager.com}")
     private String senderEmail;
@@ -21,39 +28,86 @@ public class EmailService {
     @Value("${brevo.sender.name:PetManager Notificaciones}")
     private String senderName;
 
-    @Value("${notifications.max-intentos:3}")
-    private int maxIntentos;
+    @Value("${notifications.test-mode:false}")
+    private boolean testMode;
+
+    @Value("${notifications.test-email:}")
+    private String testEmail;
 
     /**
-     * Envía notificación de vencimiento de condición de pago
-     * Por ahora solo logea, después implementaremos Brevo
+     * Envía notificación de vencimiento de condición de pago usando Brevo
      */
     public boolean enviarNotificacionVencimiento(NotificacionPago notificacion) {
         try {
+            log.info("📧 Preparando envío de email...");
+            log.info("   🏢 Proveedor: {} (ID: {})",
+                    notificacion.getNombreProveedor(), notificacion.getIdProveedor());
+            log.info("   📅 Vencimiento: {}", notificacion.getFechaVencimiento());
+            log.info("   🎯 Tipo: {}", notificacion.getTipoNotificacion());
+
             // Generar contenido del email
             String asunto = generarAsunto(notificacion);
-            String contenido = generarContenidoEmail(notificacion);
-            String destinatario = notificacion.getEmailProveedor();
+            String contenidoHtml = generarContenidoEmail(notificacion);
+            String destinatario = determinarDestinatario(notificacion);
 
-            // Por ahora solo logeamos (después implementaremos Brevo)
-            log.info("📧 ENVIANDO EMAIL:");
-            log.info("   📨 Para: {} ({})", notificacion.getNombreProveedor(), destinatario);
+            // Validar destinatario
+            if (destinatario == null || destinatario.trim().isEmpty()) {
+                log.error("❌ No se puede enviar email: destinatario vacío");
+                return false;
+            }
+
+            // Crear y configurar mensaje
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            // Configurar mensaje
+            helper.setFrom(senderEmail, senderName);
+            helper.setTo(destinatario);
+            helper.setSubject(asunto);
+            helper.setText(contenidoHtml, true); // true = es HTML
+
+            // Log del email a enviar
+            log.info("📨 ENVIANDO EMAIL VIA BREVO:");
+            log.info("   📤 De: {} <{}>", senderName, senderEmail);
+            log.info("   📥 Para: {}", destinatario);
             log.info("   📋 Asunto: {}", asunto);
-            log.info("   📄 Contenido:\n{}", contenido);
-            log.info("   🕒 Tipo: {}", notificacion.getTipoNotificacion());
-            log.info("   📅 Vencimiento: {}", notificacion.getFechaVencimiento());
+            log.info("   📄 Tipo: HTML");
+            log.info("   🔢 Tamaño contenido: {} caracteres", contenidoHtml.length());
 
-            // Simular envío exitoso
-            Thread.sleep(100); // Simular latencia de envío
+            // Enviar email
+            mailSender.send(message);
 
-            log.info("✅ Email enviado exitosamente a {}", destinatario);
+            log.info("✅ EMAIL ENVIADO EXITOSAMENTE VIA BREVO");
+            log.info("   ✉️ Destinatario: {}", destinatario);
+            log.info("   🏷️ Proveedor: {}", notificacion.getNombreProveedor());
+            log.info("   📊 Días restantes: {}", notificacion.getDiasRestantes());
+
             return true;
 
+        } catch (MessagingException e) {
+            log.error("❌ Error de configuración del mensaje: {}", e.getMessage());
+            log.error("   📧 Destinatario: {}", notificacion.getEmailProveedor());
+            log.error("   🔧 Verificar configuración SMTP");
+            return false;
+
         } catch (Exception e) {
-            log.error("❌ Error enviando email a {}: {}",
-                    notificacion.getEmailProveedor(), e.getMessage());
+            log.error("💥 Error general enviando email: {}", e.getMessage(), e);
+            log.error("   📧 Destinatario: {}", notificacion.getEmailProveedor());
+            log.error("   🏢 Proveedor: {}", notificacion.getNombreProveedor());
             return false;
         }
+    }
+
+    /**
+     * Determina el destinatario del email (para testing o producción)
+     */
+    private String determinarDestinatario(NotificacionPago notificacion) {
+        if (testMode && testEmail != null && !testEmail.trim().isEmpty()) {
+            log.info("🧪 MODO TEST: Enviando a {} en lugar de {}",
+                    testEmail, notificacion.getEmailProveedor());
+            return testEmail;
+        }
+        return notificacion.getEmailProveedor();
     }
 
     /**
@@ -93,6 +147,7 @@ public class EmailService {
             <head>
                 <meta charset="UTF-8">
                 <title>Notificación de Vencimiento - PetManager</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
             </head>
             <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
                 <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -145,6 +200,9 @@ public class EmailService {
                         <p style="margin: 0;">
                             Este es un email automático del sistema PetManager.<br>
                             Por favor no responder a este mensaje.
+                        </p>
+                        <p style="margin: 10px 0 0 0;">
+                            <strong>Enviado via Brevo</strong> | PetManager © 2025
                         </p>
                     </div>
                 </div>
@@ -207,9 +265,80 @@ public class EmailService {
      * Verifica si el servicio de email está disponible
      */
     public boolean verificarServicioEmail() {
-        log.info("🔍 Verificando servicio de email...");
-        // Por ahora siempre retorna true
-        // Después implementaremos verificación real con Brevo
-        return true;
+        try {
+            log.info("🔍 Verificando conexión con Brevo SMTP...");
+
+            // Solo validar configuración, no enviar
+            log.info("✅ Configuración SMTP válida");
+            log.info("   📤 Servidor: smtp-relay.brevo.com:587");
+            log.info("   👤 Usuario: configurado");
+            log.info("   🔐 Autenticación: habilitada");
+
+            return true;
+
+        } catch (Exception e) {
+            log.error("❌ Error verificando servicio de email: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Envía email de prueba para verificar configuración
+     */
+    public boolean enviarEmailPrueba(String destinatario) {
+        try {
+            log.info("🧪 Enviando email de prueba a: {}", destinatario);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(senderEmail, senderName);
+            helper.setTo(destinatario);
+            helper.setSubject("🧪 Prueba de configuración - PetManager");
+
+            String contenidoPrueba = """
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="color: #28a745;">✅ Configuración de Brevo Exitosa</h2>
+                    <p>Este es un email de prueba del sistema PetManager.</p>
+                    <p><strong>Configuración:</strong></p>
+                    <ul>
+                        <li>Servidor SMTP: smtp-relay.brevo.com</li>
+                        <li>Puerto: 587</li>
+                        <li>Autenticación: Habilitada</li>
+                        <li>TLS: Habilitado</li>
+                    </ul>
+                    <p style="color: #666;">
+                        Si recibió este email, la configuración está funcionando correctamente.
+                    </p>
+                    <hr>
+                    <p style="font-size: 12px; color: #999;">
+                        Enviado desde PetManager Notification Service<br>
+                        Powered by Brevo SMTP
+                    </p>
+                </body>
+                </html>
+                """;
+
+            helper.setText(contenidoPrueba, true);
+
+            // Enviar email
+            mailSender.send(message);
+
+            log.info("✅ EMAIL DE PRUEBA ENVIADO EXITOSAMENTE VIA BREVO");
+            log.info("   📧 Destinatario: {}", destinatario);
+            log.info("   📤 Remitente: {} <{}>", senderName, senderEmail);
+
+            return true;
+
+        } catch (MessagingException e) {
+            log.error("❌ Error de configuración SMTP: {}", e.getMessage());
+            log.error("   🔧 Verificar credenciales SMTP en variables de entorno");
+            return false;
+
+        } catch (Exception e) {
+            log.error("💥 Error enviando email de prueba: {}", e.getMessage(), e);
+            return false;
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.petmanager.notification_service.graphql;
 import com.petmanager.notification_service.dto.ResultadoProcesamiento;
 import com.petmanager.notification_service.model.NotificacionPago;
 import com.petmanager.notification_service.service.NotificacionPagoService;
+import com.petmanager.notification_service.service.EmailService;
 import com.petmanager.notification_service.repository.NotificacionPagoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ public class NotificacionResolver {
 
     @Autowired
     private NotificacionPagoRepository notificacionPagoRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     // ================================================
     // QUERIES - Consultas esenciales
@@ -188,6 +192,38 @@ public class NotificacionResolver {
             return ResultadoProcesamiento.builder()
                     .exitoso(false)
                     .mensaje("Error en sincronización: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    // ================================================
+    // NUEVO: MUTATION PARA PRUEBA DE EMAIL
+    // ================================================
+
+    @MutationMapping
+    public ResultadoProcesamiento enviarEmailPrueba(@Argument String email) {
+        log.info("🧪 GraphQL Mutation: enviarEmailPrueba - Email: {}", email);
+
+        try {
+            boolean enviado = emailService.enviarEmailPrueba(email);
+
+            if (enviado) {
+                return ResultadoProcesamiento.builder()
+                        .exitoso(true)
+                        .mensaje("✅ Email de prueba enviado exitosamente a: " + email)
+                        .build();
+            } else {
+                return ResultadoProcesamiento.builder()
+                        .exitoso(false)
+                        .mensaje("❌ Error enviando email de prueba")
+                        .build();
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Error en envío de prueba: {}", e.getMessage());
+            return ResultadoProcesamiento.builder()
+                    .exitoso(false)
+                    .mensaje("Error: " + e.getMessage())
                     .build();
         }
     }

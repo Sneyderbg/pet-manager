@@ -103,4 +103,10 @@ type Mutation {
     eliminarCondicionPago(idCondicionPago: ID!): Boolean
 
     crearCondicionPago(input: CondicionPagoInput!): CondicionPago
+
+    #NUEVA MUTATION: Crear condición asociada a proveedor
+    crearCondicionPagoParaProveedor(
+        idProveedor: ID!
+        input: CondicionPagoInput!
+    ): CondicionPago
 }
