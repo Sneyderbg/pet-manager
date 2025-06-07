@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/graphql", "/graphql/**").permitAll()
                         .requestMatchers("/api/users/register", "/api/users/email").permitAll()
+                        .requestMatchers("/password/request-reset").permitAll()
                         .requestMatchers("/api/users/hello").authenticated() // Requiere JWT
                         .anyRequest().permitAll()
                 )
