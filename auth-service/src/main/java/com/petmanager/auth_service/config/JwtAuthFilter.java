@@ -3,6 +3,7 @@ package com.petmanager.auth_service.config;
 import com.petmanager.auth_service.model.User;
 import com.petmanager.auth_service.repository.UserRepository;
 import com.petmanager.auth_service.service.JwtService;
+import com.petmanager.auth_service.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,13 +25,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
-
-    private final List<String> allowedOperations = Arrays.asList("login", "registerUser");
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Autowired
-    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository) {
+    public JwtAuthFilter(JwtService jwtService, UserRepository userRepository, TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -42,8 +43,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
+            // Verificar si el token está revocado
+            if (tokenBlacklistService.isTokenRevoked(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Token revocado. Debe iniciar sesión nuevamente.\"}");
+                return;
+            }
+
             try {
-                String token = authHeader.substring(7);
                 String username = jwtService.extractUsername(token);
 
                 if (username != null && jwtService.validateToken(token, username)) {
@@ -71,7 +80,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
-        // Permitir pasar la petición al siguiente filtro (ya sea autenticado o no)
         filterChain.doFilter(request, response);
     }
 }
